@@ -1,0 +1,37 @@
+server:
+  port: 8080
+logging:
+  file: log/log.txt
+#微信登录成功回调地址
+redirect_uri: http://n2tcszf.hk1.mofasuidao.cn/api/callback
+#奖池配置参数
+prizePool:
+    prizeSize: 1
+    specialAndFirstLine: 17
+    firstAndSecondLine: 15
+    secondAndThirdLine: 10
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/lottery?useUnicode=true&characterEncoding=utf-8&userSSL=false
+    username: root
+    password: 12346
+    initialSize: 5
+    minIdle: 5
+    maxActive: 20
+    maxWait: 60000
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: SELECT1FROMDUAL
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    filters: stat,wall,log4j
+    logSlowSql: true
+    platform: mysql
+#mybatis
+mybatis:
+  type-aliases-package: org.javatribe.lottery.po
+  mapper-locations: classpath:mapping/*.xml
