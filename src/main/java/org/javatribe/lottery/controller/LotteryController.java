@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import org.javatribe.lottery.po.Lottery;
 import org.javatribe.lottery.po.Result;
 import org.javatribe.lottery.po.User;
+import org.javatribe.lottery.po.WinPrize;
 import org.javatribe.lottery.service.LotteryService;
 import org.javatribe.lottery.util.LotteryUtil;
 import org.javatribe.lottery.util.ResultUtils;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
@@ -31,7 +33,7 @@ public class LotteryController {
     //是否还剩奖项
     private static boolean isHasPrizeNumber = true;
     private Logger logger = (Logger) LoggerFactory.getLogger(this.getClass());
-private static HashSet<User> users=new HashSet<>();
+    private static ConcurrentHashMap<User, Integer> users=new ConcurrentHashMap<>(1 << 11);
     /**
      * 抽奖接口
      * 1.判断token正确
@@ -41,32 +43,33 @@ private static HashSet<User> users=new HashSet<>();
      * @return
      */
     @RequestMapping("/api/{md5}/lottery")
+//    @RequestMapping("/api/lottery")
     public Object lottery(@RequestHeader(value = "token")String token) throws Exception {
         String userJson=TokenUtil.parseJWT(token).getSubject();
         JSONObject jsonObject=JSONObject.parseObject(userJson);
         User user=JSONObject.toJavaObject(jsonObject,User.class);
 
-        for(User user1:users){
-            System.out.println(user1.toString());
-        }
         if(users.contains(user)){
+            // TODO 幂等性
+            // Integer result = users.get(user);
             return "你已经抽过奖";
-        }
-        else{
+        } else {
             initPrizeSize();
-            users.add(user);
+
             if (isHasPrizeNumber) {
                 int readPrizeNum = prizeNum.decrementAndGet();
                 int myPrizeNum = readPrizeNum + 1;
                 if (readPrizeNum >= 0) {
                     logger.info("抽到的号码为：" + myPrizeNum);
-
+                    users.put(user, myPrizeNum);
                     return "恭喜你，抽到了" + LotteryUtil.NumberToLevel(myPrizeNum, lottery);
                 } else {
+                    users.put(user, 0);
                     isHasPrizeNumber = false;
                     return "抱歉，您没中奖";
                 }
             } else {
+                users.put(user, 0);
                 return "抱歉，您没中奖";
             }
         }
