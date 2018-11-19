@@ -2,10 +2,8 @@ package org.javatribe.lottery.service.impl;
 
 import org.javatribe.lottery.enums.ResultEnum;
 import org.javatribe.lottery.mapper.PrizeMapper;
-import org.javatribe.lottery.po.Exposer;
-import org.javatribe.lottery.po.Prize;
-import org.javatribe.lottery.po.Result;
-import org.javatribe.lottery.po.User;
+import org.javatribe.lottery.mapper.WinPrizeMapper;
+import org.javatribe.lottery.po.*;
 import org.javatribe.lottery.service.LotteryService;
 import org.javatribe.lottery.util.ResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +24,12 @@ import java.util.List;
 public class LotteryServiceImpl implements LotteryService {
     @Autowired
     PrizeMapper prizeMapper;
+    @Autowired
+    WinPrizeMapper winPrizeMapper;
+
     /**
      * 传入用户信息，获取暴露信息
+     *
      * @param user
      * @return
      */
@@ -39,32 +41,59 @@ public class LotteryServiceImpl implements LotteryService {
          * 3.如果不在时间范围内，不暴露抽奖接口
          * 4.如果在抽奖允许访问内，暴露接口
          */
-        List<Prize> prizes=prizeMapper.selectByExample(null);
-        if(prizes.size()>0){
-            Prize prize=prizes.get(0);
-            Date startTime=prize.getStartTime();
-            Date endTime=prize.getEndTime();
-            Date now=new Date();
-            if(now.getTime()<startTime.getTime()||now.getTime()>endTime.getTime()){
-                    return ResultUtils.success(new Exposer(false,startTime.getTime(),endTime.getTime(),now.getTime()));
-            }
-            else{
-                String md5=getMd5(user.getOpenid());
-                return ResultUtils.success(new Exposer(true,md5));
+        List<Prize> prizes = prizeMapper.selectByExample(null);
+        if (prizes.size() > 0) {
+            Prize prize = prizes.get(0);
+            Date startTime = prize.getStartTime();
+            Date endTime = prize.getEndTime();
+            Date now = new Date();
+            if (now.getTime() < startTime.getTime() || now.getTime() > endTime.getTime()) {
+                return ResultUtils.success(new Exposer(false, startTime.getTime(), endTime.getTime(), now.getTime()));
+            } else {
+                String md5 = generateMD5(user.getOpenid());
+                return ResultUtils.success(new Exposer(true, md5));
             }
         }
         return ResultUtils.error(ResultEnum.NOT_PRIZE);
     }
 
-    private String getMd5(String openid) {
-        String salt="_(^D*H(^Q#E#B)BND&3Gb";
-        String base=openid+salt;
+
+    private String generateMD5(String openid) {
+        String salt = "_(^D*H(^Q#E#B)BND&3Gb";
+        String base = openid + salt;
         String md5 = DigestUtils.md5DigestAsHex(base.getBytes());
         return md5;
     }
 
     @Override
-    public void lottery() {
-
+    public int lottery(WinPrize winPrize) {
+        try {
+            return winPrizeMapper.insert(winPrize);
+        } catch (Exception e) {
+            return 0;
+        }
     }
+
+    @Override
+    public Result listPrize() {
+        WinPrizeExample example = new WinPrizeExample();
+        example.setOrderByClause("id desc");
+        return ResultUtils.success(winPrizeMapper.selectByExample(example));
+    }
+
+    /**
+     * 校验MD5
+     *
+     * @param md5
+     * @param user
+     * @return
+     */
+    @Override
+    public boolean checkMD5(String md5, User user) {
+        if (md5 == null || user == null){
+            return false;
+        }
+        return md5.equals(generateMD5(user.getOpenid()));
+    }
+
 }

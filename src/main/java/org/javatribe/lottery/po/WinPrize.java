@@ -11,6 +11,16 @@ public class WinPrize {
 
     private String level;
 
+    public WinPrize(){}
+
+    public WinPrize(User user, Integer id, String level) {
+        this.id = id;
+        this.openid = user.getOpenid();
+        this.nickname = user.getNickname();
+        this.headurl = user.getHeadimgurl();
+        this.level = level;
+    }
+
     public Integer getId() {
         return id;
     }

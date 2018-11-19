@@ -1,5 +1,7 @@
 package org.javatribe.lottery.po;
 
+import java.util.Objects;
+
 /**
  * @ClassName User
  * @Description 封装用户个人信息
@@ -43,5 +45,19 @@ public class User {
                 ", nickname='" + nickname + '\'' +
                 ", headimgurl='" + headimgurl + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(openid, user.openid);
+}
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(openid);
     }
 }
